@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GBP Photo Downloader</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>GBP Photo Downloader</h1>
+      <label for="profileUrl">Google Business Profile link</label>
+      <div class="row">
+        <input
+          id="profileUrl"
+          type="url"
+          placeholder="https://g.page/your-business"
+          autocomplete="off"
+        />
+        <button id="fetchPhotos">Fetch photos</button>
+      </div>
+      <div class="options">
+        <div class="format">
+          <span>Download format</span>
+          <select id="formatSelect">
+            <option value="jpg">JPG</option>
+            <option value="png">PNG</option>
+            <option value="webp">WEBP</option>
+          </select>
+        </div>
+        <div class="bulk">
+          <button id="selectAll">Select all</button>
+          <button id="clearAll">Clear</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="downloadSelected" disabled>Download selected</button>
+      </div>
+      <p id="status" class="status"></p>
+      <div id="photoGrid" class="grid"></div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

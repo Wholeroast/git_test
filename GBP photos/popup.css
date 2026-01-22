@@ -1,0 +1,150 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #1f2933;
+  background: #f7f9fb;
+  width: 420px;
+}
+
+.container {
+  padding: 12px 14px 16px;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+
+label {
+  font-size: 12px;
+  color: #52616b;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+input[type="url"] {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #cbd2d9;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 4px;
+  background: #2f80ed;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0 6px;
+  gap: 8px;
+}
+
+.format {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+select {
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid #cbd2d9;
+  border-radius: 4px;
+}
+
+.bulk {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.bulk button {
+  background: #5f6c72;
+}
+
+.actions {
+  margin-bottom: 6px;
+}
+
+.actions button {
+  width: 100%;
+  background: #00a878;
+}
+
+.status {
+  min-height: 16px;
+  margin: 6px 0 8px;
+  font-size: 12px;
+  color: #52616b;
+}
+
+.status.error {
+  color: #c0392b;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.photo-card {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #d9e2ec;
+  background: #fff;
+  aspect-ratio: 1 / 1;
+}
+
+.photo-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-check {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+}
+
+.photo-index {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
