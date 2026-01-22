@@ -1,16 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "GBP Photo Downloader",
-  "version": "1.0.0",
-  "description": "Download Google Business Profile photos at full size.",
+  "name": "GBP Photo Picker",
+  "version": "2.0.0",
+  "description": "Pick and download Google Business Profile photos.",
   "action": {
-    "default_title": "GBP Photo Downloader",
+    "default_title": "GBP Photo Picker",
     "default_popup": "popup.html"
   },
   "permissions": [
-    "downloads"
+    "activeTab",
+    "downloads",
+    "scripting"
   ],
   "host_permissions": [
-    "https://*/*"
+    "https://*.google.com/*",
+    "https://*.googleusercontent.com/*"
   ]
 }

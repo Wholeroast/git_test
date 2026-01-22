@@ -1,22 +1,37 @@
-const profileUrlInput = document.getElementById("profileUrl");
-const fetchButton = document.getElementById("fetchPhotos");
+const scanButton = document.getElementById("scanPhotos");
 const selectAllButton = document.getElementById("selectAll");
 const clearButton = document.getElementById("clearAll");
 const downloadButton = document.getElementById("downloadSelected");
 const formatSelect = document.getElementById("formatSelect");
 const statusText = document.getElementById("status");
 const photoGrid = document.getElementById("photoGrid");
+const profileNameText = document.getElementById("profileName");
 
-const IMG_URL_REGEX = /https:\/\/lh\d\.googleusercontent\.com\/[^\s"'<>\\]+/g;
+let currentProfileName = "";
+let currentUrls = [];
 
-fetchButton.addEventListener("click", handleFetch);
+scanButton.addEventListener("click", handleScan);
 selectAllButton.addEventListener("click", () => toggleAll(true));
 clearButton.addEventListener("click", () => toggleAll(false));
 downloadButton.addEventListener("click", handleDownload);
 photoGrid.addEventListener("change", (event) => {
   if (event.target.classList.contains("photo-check")) {
+    syncCardSelection(event.target);
     updateDownloadState();
   }
+});
+photoGrid.addEventListener("click", (event) => {
+  const card = event.target.closest(".photo-card");
+  if (!card || event.target.classList.contains("photo-check")) {
+    return;
+  }
+  const checkbox = card.querySelector(".photo-check");
+  if (!checkbox) {
+    return;
+  }
+  checkbox.checked = !checkbox.checked;
+  syncCardSelection(checkbox);
+  updateDownloadState();
 });
 
 function setStatus(message, isError = false) {
@@ -25,92 +40,80 @@ function setStatus(message, isError = false) {
 }
 
 function setBusy(isBusy) {
-  fetchButton.disabled = isBusy;
+  scanButton.disabled = isBusy;
   selectAllButton.disabled = isBusy;
   clearButton.disabled = isBusy;
   downloadButton.disabled = isBusy || getSelectedUrls().length === 0;
-  profileUrlInput.disabled = isBusy;
   formatSelect.disabled = isBusy;
 }
 
-async function handleFetch() {
-  const url = profileUrlInput.value.trim();
-  if (!url) {
-    setStatus("Enter a Google Business Profile link.", true);
-    return;
-  }
-
+async function handleScan() {
   setBusy(true);
-  setStatus("Fetching page...");
-  photoGrid.innerHTML = "";
+  setStatus("Scanning page...");
+  profileNameText.textContent = "";
+  renderPhotos([]);
 
   try {
-    const html = await fetchPage(url);
-    const urls = extractImageUrls(html);
-    renderPhotos(urls);
-    if (urls.length === 0) {
-      setStatus(
-        "No photos found. Try opening the Photos tab and copy that URL.",
-        true
-      );
+    const tab = await getActiveTab();
+    if (!tab || !tab.id) {
+      throw new Error("No active tab found.");
+    }
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: scrapeGBPPhotos,
+    });
+
+    const result = results && results[0] ? results[0].result : null;
+    if (!result) {
+      throw new Error("No response from page.");
+    }
+    if (result.error) {
+      setStatus(result.error, true);
+      return;
+    }
+
+    currentProfileName = result.profileName || "";
+    currentUrls = result.imageUrls || [];
+
+    if (currentProfileName) {
+      profileNameText.textContent = `Profile: ${currentProfileName}`;
+    }
+
+    renderPhotos(
+      currentUrls,
+      currentUrls.length === 0 ? "No images found." : null
+    );
+    if (currentUrls.length === 0) {
+      setStatus("No images found on this page.", true);
     } else {
-      setStatus(`Found ${urls.length} photos.`);
+      setStatus(`Loaded ${currentUrls.length} photos.`);
     }
   } catch (error) {
-    setStatus(`Failed to fetch photos: ${error.message}`, true);
+    setStatus(`Scan failed: ${error.message}`, true);
   } finally {
     setBusy(false);
     updateDownloadState();
   }
 }
 
-async function fetchPage(url) {
-  const response = await fetch(url, {
-    redirect: "follow",
-    credentials: "omit",
-  });
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
-  }
-  return response.text();
+async function getActiveTab() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tabs[0];
 }
 
-function extractImageUrls(html) {
-  const normalized = html.replace(/\\\//g, "/");
-  const matches = normalized.match(IMG_URL_REGEX) || [];
-  const urls = matches.map((match) => ensureS0(decodeEscapes(match)));
-  const unique = Array.from(new Set(urls.filter(Boolean)));
-  return unique;
-}
-
-function decodeEscapes(value) {
-  return value
-    .replace(/\\\\u003d/g, "=")
-    .replace(/\\u003d/g, "=")
-    .replace(/\\\\u0026/g, "&")
-    .replace(/\\u0026/g, "&")
-    .replace(/\\\\u003f/g, "?")
-    .replace(/\\u003f/g, "?");
-}
-
-function ensureS0(url) {
-  if (!url) {
-    return "";
-  }
-  let fixed = url;
-  if (!fixed.includes("googleusercontent.com")) {
-    return fixed;
-  }
-  fixed = fixed.replace(/\/s\d+(-[a-z]+)?\//g, "/s0/");
-  fixed = fixed.replace(/=([swh]\d+[^&]*)$/, "=s0");
-  if (!/=s0$/.test(fixed) && !/=[swh]\d/.test(fixed)) {
-    fixed += "=s0";
-  }
-  return fixed;
-}
-
-function renderPhotos(urls) {
+function renderPhotos(urls, emptyMessage = "No photos loaded yet.") {
   photoGrid.innerHTML = "";
+  photoGrid.classList.toggle("empty", urls.length === 0);
+
+  if (urls.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = emptyMessage;
+    photoGrid.appendChild(empty);
+    return;
+  }
+
   urls.forEach((url, index) => {
     const card = document.createElement("div");
     card.className = "photo-card";
@@ -121,7 +124,7 @@ function renderPhotos(urls) {
     checkbox.dataset.url = url;
 
     const img = document.createElement("img");
-    img.src = url;
+    img.src = getPreviewUrl(url);
     img.alt = `Photo ${index + 1}`;
 
     const badge = document.createElement("span");
@@ -139,8 +142,17 @@ function toggleAll(checked) {
   const checkboxes = photoGrid.querySelectorAll(".photo-check");
   checkboxes.forEach((box) => {
     box.checked = checked;
+    syncCardSelection(box);
   });
   updateDownloadState();
+}
+
+function syncCardSelection(checkbox) {
+  const card = checkbox.closest(".photo-card");
+  if (!card) {
+    return;
+  }
+  card.classList.toggle("selected", checkbox.checked);
 }
 
 function getSelectedUrls() {
@@ -161,37 +173,82 @@ async function handleDownload() {
   }
 
   const format = formatSelect.value;
+  const folderName = sanitizeFolderName(
+    currentProfileName || "GBP Photos"
+  );
   setBusy(true);
 
-  try {
-    for (let i = 0; i < selectedUrls.length; i += 1) {
-      const url = selectedUrls[i];
-      setStatus(`Downloading ${i + 1} of ${selectedUrls.length}...`);
-      await downloadImage(url, i + 1, format);
+  let success = 0;
+  let failed = 0;
+  for (let i = 0; i < selectedUrls.length; i += 1) {
+    const url = selectedUrls[i];
+    setStatus(`Downloading ${i + 1} of ${selectedUrls.length}...`);
+    try {
+      await downloadImage(url, i + 1, format, folderName);
+      success += 1;
+    } catch (error) {
+      failed += 1;
+      console.warn("Download failed", error);
     }
-    setStatus(`Downloaded ${selectedUrls.length} photos.`);
-  } catch (error) {
-    setStatus(`Download failed: ${error.message}`, true);
-  } finally {
-    setBusy(false);
   }
+
+  if (failed > 0) {
+    setStatus(`Done. Downloaded: ${success}, Failed: ${failed}`, true);
+  } else {
+    setStatus(`Done. Downloaded: ${success}.`);
+  }
+  setBusy(false);
 }
 
-async function downloadImage(url, index, format) {
-  const s0Url = ensureS0(url);
-  const sourceBlob = await fetchBlob(s0Url);
-  const outputBlob = await convertBlob(sourceBlob, format);
-  const extension = format.toLowerCase();
-  const filename = buildFilename(s0Url, index, extension);
-  const blobUrl = URL.createObjectURL(outputBlob);
+function getPreviewUrl(baseUrl) {
+  return `${baseUrl}=s200`;
+}
 
-  await chrome.downloads.download({
-    url: blobUrl,
-    filename,
-    saveAs: false,
-  });
+function sanitizeFolderName(name) {
+  const cleaned = name
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) {
+    return "GBP Photos";
+  }
+  return cleaned.slice(0, 80);
+}
 
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+async function downloadImage(baseUrl, index, format, folderName) {
+  const fullUrl = `${baseUrl}=s0`;
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const sourceBlob = await fetchBlob(fullUrl);
+      if (sourceBlob.size < 1000) {
+        throw new Error("Blob too small");
+      }
+      const outputBlob = await convertBlob(sourceBlob, format);
+      const extension = format === "jpeg" ? "jpg" : format;
+      const filename = `${folderName}/gbp-image-${String(index).padStart(
+        3,
+        "0"
+      )}.${extension}`;
+      const blobUrl = URL.createObjectURL(outputBlob);
+
+      await chrome.downloads.download({
+        url: blobUrl,
+        filename,
+        saveAs: false,
+      });
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+      await sleep(1000);
+      return;
+    } catch (error) {
+      lastError = error;
+      await sleep(1500);
+    }
+  }
+
+  throw lastError || new Error("Download failed.");
 }
 
 async function fetchBlob(url) {
@@ -203,7 +260,7 @@ async function fetchBlob(url) {
 }
 
 async function convertBlob(blob, format) {
-  const mimeType = format === "jpg" ? "image/jpeg" : `image/${format}`;
+  const mimeType = format === "jpeg" ? "image/jpeg" : `image/${format}`;
   const image = await decodeImage(blob);
   const width = image.width || image.naturalWidth;
   const height = image.height || image.naturalHeight;
@@ -244,21 +301,43 @@ async function decodeImage(blob) {
   });
 }
 
-function buildFilename(url, index, extension) {
-  let base = `photo-${String(index).padStart(3, "0")}`;
-  try {
-    const parsed = new URL(url);
-    const parts = parsed.pathname.split("/").filter(Boolean);
-    const candidate = parts[parts.length - 1];
-    if (candidate && candidate.length < 64) {
-      base = candidate;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function scrapeGBPPhotos() {
+  const container = document.querySelector('div.HHuGCe[jsname="Iu0eZe"]');
+  if (!container) {
+    return { error: "Container not found. Open the Photos tab first." };
+  }
+
+  let prev = 0;
+  let same = 0;
+  while (same < 5) {
+    container.scrollTop = container.scrollHeight;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const curr = container.querySelectorAll("img").length;
+    if (curr === prev) {
+      same += 1;
+    } else {
+      same = 0;
+      prev = curr;
     }
-  } catch (error) {
-    base = `photo-${String(index).padStart(3, "0")}`;
   }
-  base = base.replace(/[^a-zA-Z0-9-_]+/g, "-").replace(/^-+|-+$/g, "");
-  if (!base) {
-    base = `photo-${String(index).padStart(3, "0")}`;
-  }
-  return `gbp-photos/${base}.${extension}`;
+  container.scrollTop = 0;
+
+  const imgs = Array.from(container.querySelectorAll("img"))
+    .map((img) => img.src)
+    .filter((src) => /lh3\.googleusercontent\.com\//.test(src));
+  const unique = Array.from(new Set(imgs.map((url) => url.split("=")[0]))).filter(
+    Boolean
+  );
+
+  const profileName =
+    document.querySelector("h2.jFiX9e")?.textContent?.trim() || "";
+
+  return {
+    profileName,
+    imageUrls: unique,
+  };
 }

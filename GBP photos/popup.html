@@ -3,41 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GBP Photo Downloader</title>
+    <title>GBP Photo Picker</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <div class="container">
-      <h1>GBP Photo Downloader</h1>
-      <label for="profileUrl">Google Business Profile link</label>
-      <div class="row">
-        <input
-          id="profileUrl"
-          type="url"
-          placeholder="https://g.page/your-business"
-          autocomplete="off"
-        />
-        <button id="fetchPhotos">Fetch photos</button>
+      <header class="header">
+        <h1>GBP Photo Picker</h1>
+        <p class="hint">Open a GBP Photos tab, then scan.</p>
+        <button id="scanPhotos" class="primary">Scan current page</button>
+        <div id="profileName" class="profile-name"></div>
+        <p id="status" class="status"></p>
+      </header>
+      <div id="photoGrid" class="grid empty">
+        <p class="empty-state">No photos loaded yet.</p>
       </div>
       <div class="options">
         <div class="format">
-          <span>Download format</span>
+          <label for="formatSelect">Format</label>
           <select id="formatSelect">
-            <option value="jpg">JPG</option>
+            <option value="jpeg">JPEG</option>
             <option value="png">PNG</option>
-            <option value="webp">WEBP</option>
+            <option value="webp">WebP</option>
           </select>
         </div>
         <div class="bulk">
-          <button id="selectAll">Select all</button>
-          <button id="clearAll">Clear</button>
+          <button id="selectAll" class="ghost">Select all</button>
+          <button id="clearAll" class="ghost">Clear</button>
         </div>
       </div>
-      <div class="actions">
-        <button id="downloadSelected" disabled>Download selected</button>
-      </div>
-      <p id="status" class="status"></p>
-      <div id="photoGrid" class="grid"></div>
+      <button id="downloadSelected" class="download" disabled>
+        Download selected
+      </button>
     </div>
     <script src="popup.js"></script>
   </body>
