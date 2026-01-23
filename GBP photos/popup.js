@@ -226,7 +226,7 @@ async function downloadImage(baseUrl, index, format, folderName) {
         throw new Error("Blob too small");
       }
       const outputBlob = await convertBlob(sourceBlob, format);
-      const extension = format === "jpeg" ? "jpg" : format;
+      const extension = format === "jpeg" ? "jpeg" : format;
       const filename = `${folderName}/gbp-image-${String(index).padStart(
         3,
         "0"

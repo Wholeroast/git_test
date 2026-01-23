@@ -79,11 +79,13 @@ button.download {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  grid-auto-rows: minmax(110px, auto);
+  gap: 8px;
+  align-content: start;
   max-height: 280px;
   overflow-y: auto;
-  padding: 6px;
+  padding: 8px;
   border: 1px solid #d9e2ec;
   border-radius: 6px;
   background: #fff;
@@ -110,6 +112,7 @@ button.download {
   border: 1px solid #d9e2ec;
   background: #fff;
   aspect-ratio: 1 / 1;
+  min-height: 110px;
 }
 
 .photo-card img {
