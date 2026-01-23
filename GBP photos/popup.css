@@ -12,30 +12,33 @@ body {
 
 .container {
   padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 h1 {
   font-size: 16px;
-  margin: 0 0 10px;
+  margin: 0;
 }
 
-label {
+.hint {
+  margin: 0;
   font-size: 12px;
   color: #52616b;
 }
 
-.row {
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-input[type="url"] {
-  flex: 1;
-  padding: 6px 8px;
-  border: 1px solid #cbd2d9;
-  border-radius: 4px;
+.profile-name {
+  min-height: 16px;
   font-size: 12px;
+  font-weight: 600;
+  color: #2f3a3f;
 }
 
 button {
@@ -43,7 +46,7 @@ button {
   border-radius: 4px;
   background: #2f80ed;
   color: #fff;
-  padding: 6px 10px;
+  padding: 8px 10px;
   font-size: 12px;
   cursor: pointer;
 }
@@ -53,49 +56,19 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.options {
-  display: flex;
-  justify-content: space-between;
-  margin: 12px 0 6px;
-  gap: 8px;
+button.ghost {
+  background: #e1e6eb;
+  color: #1f2933;
 }
 
-.format {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-}
-
-select {
-  padding: 4px 6px;
-  font-size: 12px;
-  border: 1px solid #cbd2d9;
-  border-radius: 4px;
-}
-
-.bulk {
-  display: flex;
-  gap: 6px;
-  align-items: flex-end;
-}
-
-.bulk button {
-  background: #5f6c72;
-}
-
-.actions {
-  margin-bottom: 6px;
-}
-
-.actions button {
+button.download {
   width: 100%;
   background: #00a878;
 }
 
 .status {
   min-height: 16px;
-  margin: 6px 0 8px;
+  margin: 0;
   font-size: 12px;
   color: #52616b;
 }
@@ -106,11 +79,30 @@ select {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  grid-auto-rows: minmax(110px, auto);
+  gap: 8px;
+  align-content: start;
   max-height: 280px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding: 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 6px;
+  background: #fff;
+  min-height: 120px;
+}
+
+.grid.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state {
+  margin: 0;
+  font-size: 12px;
+  color: #8a99a6;
+  text-align: center;
 }
 
 .photo-card {
@@ -120,6 +112,7 @@ select {
   border: 1px solid #d9e2ec;
   background: #fff;
   aspect-ratio: 1 / 1;
+  min-height: 110px;
 }
 
 .photo-card img {
@@ -147,4 +140,41 @@ select {
   font-size: 10px;
   padding: 2px 4px;
   border-radius: 4px;
+}
+
+.photo-card.selected {
+  outline: 2px solid #2f80ed;
+  outline-offset: -2px;
+}
+
+.options {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.format {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+label {
+  font-size: 12px;
+  color: #52616b;
+}
+
+select {
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid #cbd2d9;
+  border-radius: 4px;
+}
+
+.bulk {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
 }
